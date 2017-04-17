@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<package>
+  <name>simple</name>
+  <version>0.0.1</version>
+  <description>
+    Lab package
+  </description>
+  <maintainer email="snaik3@umcerced.edu">
+    Shubham Naik
+  </maintainer>
+  <license>TODO</license>
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>turtlesim</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>move_around</build_depend>
+  <build_depend>move_base</build_depend>
+  <run_depend>geometry_msgs</run_depend>
+  <run_depend>std_msgs</run_depend>
+  <run_depend>roscpp</run_depend>
+  <run_depend>turtlesim</run_depend>
+  <run_depend>move_around</run_depend>
+  <run_depend>move_base</run_depend>
+  <run_depend>eigens</run_depend>
+
+</package>
