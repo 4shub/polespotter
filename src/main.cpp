@@ -1,17 +1,20 @@
 #include <ros/ros.h>
+#include <geometry_msgs/Pose.h>
+#include <vector>
 
-int main(int argc,char **argv) {
+void sendNextLocation(){
+    geometry_msgs::Pose location;
+
+}
+
+
+int main(int argc,char **argv){
 
   ros::init(argc,argv,"main");
   ros::NodeHandle nh;
 
 
-  ros::Rate rate(2);
 
-
-  while (ros::ok()) {
-
-    rate.sleep();
-  }
+  ros::spin();
 
 }
