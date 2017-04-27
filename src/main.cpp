@@ -64,7 +64,7 @@ void gotoNextPosition(){
 
 void findPoles(){
   // scanner script
-
+  // jimmy put code here
   gotoNextPositon();
 }
 
