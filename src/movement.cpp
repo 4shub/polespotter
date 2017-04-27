@@ -5,8 +5,61 @@
 #include "std_msgs/String.h"
 #include <geometry_msgs/Pose.h>
 
-
 geometry_msgs::Pose tmppose;
+geometry_msgs::Pose poi;
+
+bool move(x,y){
+
+  ros::ServiceClient client = nh.serviceClient<nav_msgs::GetPlan>("/move_base/make_plan");
+
+
+  client.waitForExistence();
+	std_msgs::String msg;
+
+	tmppose.position.x = 0;
+	tmppose.position.y = 0;
+	tmppose.orientation.w = cos(0.0 * M_PI / 180 / 2);
+
+		nav_msgs::GetPlan service;
+
+    		service.request.start.header.frame_id = "map";
+    		service.request.start.header.stamp = ros::Time::now();
+    		service.request.start.pose.position.x = tmppose.position.x;
+    		service.request.start.pose.position.y = tmppose.position.y;
+    		//service.request.start.pose.orientation.w = tmppose.orientation.w;    
+
+    		service.request.goal.header.frame_id = "map";
+    		service.request.goal.header.stamp = ros::Time::now();
+    		service.request.goal.pose.position.x = x;
+    		service.request.goal.pose.position.y = y;
+    		//service.request.goal.pose.orientation.w = poi.orientation.w;
+
+		tmppose.position.x = poi.position.x;
+		tmppose.position.y = poi.position.y;
+		tmppose.orientation.w = poi.orientation.w;
+
+    		if(client.call(service)){
+        		ROS_INFO_STREAM("Service successfully called");
+    		}
+    		else {
+			ROS_ERROR_STREAM("Error while calling service");
+    		}
+
+    		for(int i = 0; i < service.response.plan.poses.size(); i++){
+    			ROS_INFO_STREAM("plan point " << i << ":" << service.response.plan.poses[i]);
+
+    		}
+		/*if(client.getState() == actionlib::SimpleClientGoalState::SUCCEEDED){
+				msg.data = "COMPLETE";
+			}else {
+				msg.data = "FAILED";
+				ROS_ERROR_STREAM("Failed to reach poi");
+				//ros::shutdown();
+
+			}*/
+}
+
+/*geometry_msgs::Pose tmppose;
 geometry_msgs::Pose poi;
 
 void poiMessageRecieved(const geometry_msgs::Pose& POI) {
@@ -36,7 +89,8 @@ int main(int argc,char **argv) {
   ros::init(argc,argv,"movement");
   ros::NodeHandle nh;
 	
-  ros::Subscriber sub = nh.subscribe("/poi",  1000, &poiMessageRecieved);
+  //ros::Subscriber sub = nh.subscribe("/poi",  1000, &poiMessageRecieved);
+
   ros::Publisher pub = nh.advertise<std_msgs::String>("/polespotter/arrival",  1000);
 
   ros::ServiceClient client = nh.serviceClient<nav_msgs::GetPlan>("/move_base/make_plan");
@@ -48,6 +102,9 @@ int main(int argc,char **argv) {
 	tmppose.position.x = 0;
 	tmppose.position.y = 0;
 	tmppose.orientation.w = cos(0.0 * M_PI / 180 / 2);
+poi.position.x = 8;
+	poi.position.y = 5;
+	poi.orientation.w = cos(0.0 * M_PI / 180 / 2);
 
   ros::Rate rate(2);
 
