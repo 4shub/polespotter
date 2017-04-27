@@ -5,6 +5,7 @@
 #include <geometry_msgs/Point.h>
 #include <nav_msgs/Odometry.h>
 #include <vector>
+#include <string>
 
 // defaults
 const int ZONE_TABLE_MAX_X = 8;
@@ -14,7 +15,7 @@ const int ZONE_COUNT = ZONE_TABLE_MAX*2 * ZONE_TABLE_MIN*2;
 // Declare handler
 ros::NodeHandle nh;
 geometry_msgs::Point currentLocation;
-
+std::vector zoneList;
 
 /*
 Zones managed:
@@ -32,7 +33,7 @@ void setOriginLocation(){
   currentLocation.z = 0;
 }
 
-std::vector setZoneIndicies(){
+void setZoneIndicies(){
   std::vector<geometry_msgs::Point> zones(ZONE_COUNT);
 
   int x_index = ZONE_TABLE_MAX_X;
@@ -49,10 +50,30 @@ std::vector setZoneIndicies(){
     y_index = y_index - 2;
   }
 
-  
+  zoneList = zones;
 }
 
+void incrementZone(){
+  zoneHandled++;
+}
+
+void gotoNextPosition(){
+   incrementZone();
+   moveRobot(zoneList[zoneHandled].x, zoneList[zoneHandled].y);
+}
+
+void findPoles(){
+  // scanner script
+
+  gotoNextPositon();
+}
+
+
+
 void moveRobot(float x, float y){
+  // initialize subscriber base
+  ros::ServiceClient client = nh.serviceCLient<nav_msgs::GetPlan>("/move_base/make_plan");
+  client.waitForExistence();
 
   nav_msgs::GetPlan service;
 
@@ -80,6 +101,16 @@ void moveRobot(float x, float y){
   for(int i = 0; i < service.response.plan.poses.size(); i++){
     ROS_INFO_STREAM("plan point " << i << ":" << service.response.plan.poses[i]);
   }
+
+  if(client.getState() == actionlib::SimpleClientGoalState::SUCCEEDED){
+		ROS_INFO("MOVED SUCCESFULLY");
+    findPoles();
+	} else {
+    ROS_INFO("MOVED FAILED");
+    gotoNextPositon();
+	}
+
+  ros::spin();
 }
 
 void getNextLocation(){
@@ -92,12 +123,12 @@ int main(int argc,char **argv){
   
   // initialize routes
   setOriginLocation();
+  setZoneIndicies();
 
-  // initialize subscriber base
-  ros::ServiceClient client = nh.serviceCLient<nav_msgs::GetPlan>("/move_base/make_plan");
-  client.waitForExistence();
+  
 
+  moveRobot(zoneList[zoneHandled].x, zoneList[zoneHandled].y);
 
-  ros::spin();
+  
 
 }
