@@ -20,6 +20,7 @@ const int ZONE_COUNT = ZONE_TABLE_MAX_X*2 * ZONE_TABLE_MAX_Y*2;
 ros::NodeHandle nh;
 geometry_msgs::Point currentLocation;
 std::vector<geometry_msgs::Point> zoneList(ZONE_COUNT);
+std::vector<geometry_msgs::Point> poleList;
 
 /*
 Zones managed:
@@ -61,7 +62,30 @@ void incrementZone(){
   zoneHandled++;
 }
 
+void addPole(geometry_msgs::Point poleLocation){
+  poleList.insert(poleLocation);
+  ROS_INFO_STREAM("ADDED POLE AT x:" << poleLocation.x << " y:" << poleLocation.y);
+}
 
+void verifyAndInsertPole(geometry_msgs::Point poleLocation){
+  for(int i = 0; i < poleList.size(); i++){
+    float x_loc = poleList[i].x;
+    float y_loc = poleList[i].y;
+    float errorMargin = 0.25;
+    if(x_loc + errorMargin >= poleLocation.x && 
+       x_loc - errorMargin <= poleLocation.x &&
+       y_loc + errorMargin >= poleLocation.y &&
+       y_loc - errorMargin <= poleLocation.y
+      ){
+        
+        // if we find a conflict
+        return;
+    }
+  }
+
+  addPole(poleLocation);
+  return;
+}
 
 
 
@@ -102,6 +126,7 @@ void moveRobot(float x, float y){
 
   if(client.getState() == actionlib::SimpleClientGoalState::SUCCEEDED){
 		ROS_INFO("MOVED SUCCESFULLY");
+    scanPoles();
     incrementZone();
     moveRobot(zoneList[zoneHandled].x, zoneList[zoneHandled].y);
 	} else {
@@ -113,6 +138,10 @@ void moveRobot(float x, float y){
   ros::spin();
 }
 
+
+void scanPoles(){
+  
+}
 
 
 
