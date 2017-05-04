@@ -4,8 +4,8 @@
 #include <geometry_msgs/Polygon.h>
 #include <geometry_msgs/Point.h>
 #include <nav_msgs/Odometry.h>
-#include <actionlib/client/simple_action_client.h>
 #include <move_base_msgs/MoveBaseAction.h>
+#include <actionlib/client/simple_action_client.h>
 #include <nav_msgs/GetPlan.h>
 #include <vector>
 #include <string>
@@ -13,6 +13,8 @@
 // foreach
 #include <boost/foreach.hpp>
 #define forEach BOOST_FOREACH
+
+typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseClient;
 
 // defaults
 const int ZONE_TABLE_MAX_X = 8;
@@ -48,14 +50,15 @@ void setZoneIndicies(){
   int x_index = ZONE_TABLE_MAX_X;
   int y_index = ZONE_TABLE_MAX_Y;
 
-  for(int i = 0; i < ZONE_TABLE_MAX_Y; i++){
-    for(int j = 0; j < ZONE_TABLE_MAX_X; j++){
+  for(int i = 0; i <= ZONE_TABLE_MAX_Y; i++){
+    for(int j = 0; j <= ZONE_TABLE_MAX_X; j++){
       zones[j].x = x_index;
       zones[j].y = y_index;
 
       x_index = x_index - 2;
     }
 
+    x_index = ZONE_TABLE_MAX_X;
     y_index = y_index - 2;
   }
 
@@ -96,12 +99,11 @@ void verifyAndInsertPole(geometry_msgs::Point poleLocation){
 
 void moveRobot(ros::NodeHandle nh, float x, float y){
   // initialize subscriber base
-  ros::ServiceClient client = nh.serviceClient<nav_msgs::GetPlan>("/move_base/make_plan");
-  client.waitForExistence();
+  ros::ServiceClient planner = nh.serviceClient<nav_msgs::GetPlan>("/move_base/make_plan", true);
+ // client.waitForExistence();
 
   nav_msgs::GetPlan service;
 
-  ROS_INFO("init: x = %f, y = %f", currentLocation.x, currentLocation.y);
 
   service.request.start.header.frame_id = "map";
   service.request.start.header.stamp = ros::Time::now();
@@ -118,12 +120,45 @@ void moveRobot(ros::NodeHandle nh, float x, float y){
   currentLocation.x = x;
   currentLocation.y = y;
 
-  if(client.call(service)){
+  if(planner.call(service)){
     ROS_INFO_STREAM("Service successfully called");
 
-   forEach(const geometry_msgs::PoseStamped &p, service.response.plan.poses) {
-      ROS_INFO("x = %f, y = %f", p.pose.position.x, p.pose.position.y);
+  forEach(const geometry_msgs::PoseStamped &p, service.response.plan.poses) {
+     ROS_INFO("x = %f, y = %f", p.pose.position.x, p.pose.position.y);
+
+     // Move the robot
+   MoveBaseClient ac("move_base", true);
+
+   //wait for the action server to come up
+   while(!ac.waitForServer(ros::Duration(5.0))){
+	ROS_INFO("Waiting for the move_base action server to come up");
    }
+
+   move_base_msgs::MoveBaseGoal goal;
+
+   // goal one
+   goal.target_pose.header.frame_id = "map";
+   goal.target_pose.header.stamp = ros::Time::now();
+ 
+   goal.target_pose.pose.position.x = p.pose.position.x;
+   goal.target_pose.pose.position.y = p.pose.position.y;
+   goal.target_pose.pose.orientation.w = 1;
+
+   ROS_INFO("Sending goal");
+   ac.sendGoal(goal);
+ 
+   ac.waitForResult();
+
+    if(ac.getState() == actionlib::SimpleClientGoalState::SUCCEEDED){
+      ROS_INFO("Step completed!");
+    } else {
+    ROS_INFO("The base failed to move forward");
+    ros::shutdown();
+    }
+  }
+  
+  
+ 
 
   } else {
     ROS_ERROR_STREAM("Error while calling service");
